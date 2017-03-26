@@ -17,9 +17,11 @@ public class Platformer extends ApplicationAdapter {
 	private Animation<TextureRegion>[] animations;
 	private TextureRegion currentFrame;
 
+	//player positions
 	private float posx;
 	private float posy;
-	private float yFloor = 0f;
+	//position of floor
+	private float yFloor = 100f;
 
 	private float frameTime;
 
@@ -32,7 +34,6 @@ public class Platformer extends ApplicationAdapter {
 	private boolean wPressed = false;
 
 	private boolean spacePressed = false;
-	private boolean	shooting = false;
 	private float cooldown = 0;
 	private ArrayList<Bullet> bullets;
 
@@ -42,7 +43,7 @@ public class Platformer extends ApplicationAdapter {
 		frameTime = 0f;
 
 		posx = Gdx.graphics.getWidth()*0.5f;
-		posy = 0f;
+		posy = yFloor;
 
 		atlas = new TextureAtlas(Gdx.files.internal("animations/animations.atlas"));
 
@@ -51,10 +52,11 @@ public class Platformer extends ApplicationAdapter {
 		animations[1] = new Animation<TextureRegion>(0.033f,atlas.findRegions("flash_jumps"), Animation.PlayMode.LOOP);
 		animations[2] = new Animation<TextureRegion>(0.033f,atlas.findRegions("bullet"), Animation.PlayMode.LOOP);
 		animations[3] = new Animation<TextureRegion>(0.033f,atlas.findRegions("flash_attacks"), Animation.PlayMode.LOOP);
-		//0 idle, 1 jump, 2 bullet
+		//0 idle, 1 jump, 2 bullet, 3 attack
 
 		currentFrame = animations[0].getKeyFrame(0);
 
+		//create arrayList
 		bullets = new ArrayList<Bullet>();
 
 	}
