@@ -8,6 +8,8 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
+import java.util.ArrayList;
+
 
 public class Platformer extends ApplicationAdapter {
 	private SpriteBatch batch;
@@ -27,8 +29,12 @@ public class Platformer extends ApplicationAdapter {
 	private float t = 0f; //Time
 
 	private boolean jumping = false;
-	private boolean spacePressed = false;
+	private boolean wPressed = false;
 
+	private boolean spacePressed = false;
+	private boolean	shooting = false;
+	private float cooldown = 0;
+	private ArrayList<Bullet> bullets;
 
 	@Override
 	public void create () {
@@ -40,15 +46,58 @@ public class Platformer extends ApplicationAdapter {
 
 		atlas = new TextureAtlas(Gdx.files.internal("animations/animations.atlas"));
 
-		animations = new Animation[2];
+		animations = new Animation[4];
 		animations[0] = new Animation<TextureRegion>(0.033f,atlas.findRegions("flash_idles"), Animation.PlayMode.LOOP);
 		animations[1] = new Animation<TextureRegion>(0.033f,atlas.findRegions("flash_jumps"), Animation.PlayMode.LOOP);
-		//0 idle, 1 jump
+		animations[2] = new Animation<TextureRegion>(0.033f,atlas.findRegions("bullet"), Animation.PlayMode.LOOP);
+		animations[3] = new Animation<TextureRegion>(0.033f,atlas.findRegions("flash_attacks"), Animation.PlayMode.LOOP);
+		//0 idle, 1 jump, 2 bullet
 
 		currentFrame = animations[0].getKeyFrame(0);
 
-	}
+		bullets = new ArrayList<Bullet>();
 
+	}
+	private void jump(float delta){
+		//check if W is pressed
+		wPressed = Gdx.input.isKeyPressed(Input.Keys.W);
+		//jump if not jumping yet
+		if(wPressed && !jumping)jumping = true;
+
+		if(jumping) {
+			t += delta; 												//Increase Time
+			v = iv + a * t;											//velocity = initial velocity + acceleration * time
+			posy += v * delta;											//update y position
+			currentFrame = animations[1].getKeyFrame(frameTime); 	//get frame from animation
+		}
+		if(posy <= yFloor){											//touch the floor
+			jumping = false;										//change state to not jumping
+			t = 0;													//reset jumptime
+			currentFrame = animations[0].getKeyFrame(frameTime);	//get frame from animation
+		}
+
+	}
+	private void shoot(float delta){
+		//check if space is pressed
+		spacePressed = Gdx.input.isKeyPressed(Input.Keys.SPACE);
+
+		if(spacePressed && cooldown <= 0){
+			cooldown = 0.2f;
+			Bullet b = new Bullet(animations[2]);
+			bullets.add(b);
+			b.setPosition(posx, posy + currentFrame.getRegionHeight()*0.25f);
+			frameTime = 0;
+
+		}
+		if(cooldown>0)
+		{
+			cooldown-=delta;
+			currentFrame = animations[3].getKeyFrame(frameTime);
+		}
+
+
+
+	}
 	@Override
 	public void render () {
 
@@ -56,21 +105,15 @@ public class Platformer extends ApplicationAdapter {
 		float d = Gdx.graphics.getDeltaTime();
 		frameTime += d;
 
-		//check is space is pressed
-		spacePressed = Gdx.input.isKeyPressed(Input.Keys.SPACE);
-		//jump if not jumping yet
-		if(spacePressed && !jumping)jumping = true;
+		jump(d);
+		shoot(d);
 
-		if(jumping) {
-			t += d; 												//Increase Time
-			v = iv + a * t;											//velocity = initial velocity + acceleration * time
-			posy += v * d;											//update y position
-			currentFrame = animations[1].getKeyFrame(frameTime); 	//get frame from animation
-		}
-		if(posy <= yFloor){											//touch the floor
-			jumping = false;										//change state to not jumping
-			t = 0;													//reset jumptime
-			currentFrame = animations[0].getKeyFrame(frameTime);	//get frame from animation
+
+		for (Bullet b : bullets) { //for each loop door alle bullets
+			if(b.getXpos() > Gdx.graphics.getWidth()){
+				bullets.remove(b);
+ 				break;
+			}
 		}
 
 		//clear screen
@@ -80,6 +123,9 @@ public class Platformer extends ApplicationAdapter {
 		//draw images
 		batch.begin();
 		batch.draw(currentFrame ,posx - currentFrame.getRegionWidth()*0.5f, posy);
+		for (Bullet b : bullets) { //for each loop door alle bullets
+			b.render(batch, d);
+		}
 		batch.end();
     }
 	@Override
